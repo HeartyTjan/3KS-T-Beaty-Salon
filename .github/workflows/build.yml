@@ -9,13 +9,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
-    services:
-      mongo:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-
+    
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,13 +20,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-
-      - name: Wait for MongoDB to be ready
-        run: |
-          until mongosh --eval 'db.runCommand({ ping: 1 })' --quiet; do
-            echo "Waiting for MongoDB..."
-            sleep 2
-          done
 
       - name: Run Maven tests
         run: mvn clean verify
