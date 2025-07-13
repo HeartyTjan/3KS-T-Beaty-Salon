@@ -2,8 +2,8 @@ name: Backend Test and Merge (Java + MongoDB)
 
 on:
   push:
-    branches:
-      - tijani
+    branches:  ["tijani"]
+      
 
 permissions:
   contents: write
