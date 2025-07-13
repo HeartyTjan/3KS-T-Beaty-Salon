@@ -22,6 +22,7 @@ jobs:
           java-version: 21
 
       - name: Run Maven tests
+        working-directory: 3kstBackend
         run: mvn clean verify
 
       - name: Auto-merge tijani into dev if tests pass
