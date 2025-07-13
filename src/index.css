@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 40 20% 98%;
+    --foreground: 25 30% 15%;
+
+    --card: 40 25% 96%;
+    --card-foreground: 25 30% 15%;
+
+    --popover: 40 25% 96%;
+    --popover-foreground: 25 30% 15%;
+
+    --primary: 140 60% 35%;
+    --primary-foreground: 40 20% 98%;
+
+    --secondary: 35 45% 85%;
+    --secondary-foreground: 25 30% 15%;
+
+    --muted: 35 20% 92%;
+    --muted-foreground: 25 15% 45%;
+
+    --accent: 45 85% 65%;
+    --accent-foreground: 25 30% 15%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 35 25% 88%;
+    --input: 35 25% 88%;
+    --ring: 140 60% 35%;
+
+    --radius: 0.75rem;
+
+    /* Custom 3KS&T Brand Colors */
+    --brand-gold: 45 85% 65%;
+    --brand-green: 140 60% 35%;
+    --brand-brown: 25 30% 15%;
+    --brand-cream: 40 20% 98%;
+    --brand-earth: 35 45% 85%;
+
+    --sidebar-background: 40 20% 98%;
+    --sidebar-foreground: 25 30% 15%;
+    --sidebar-primary: 140 60% 35%;
+    --sidebar-primary-foreground: 40 20% 98%;
+    --sidebar-accent: 35 45% 85%;
+    --sidebar-accent-foreground: 25 30% 15%;
+    --sidebar-border: 35 25% 88%;
+    --sidebar-ring: 140 60% 35%;
+  }
+
+  .dark {
+    --background: 25 30% 10%;
+    --foreground: 40 20% 95%;
+
+    --card: 25 25% 15%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 25 25% 15%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 140 60% 45%;
+    --primary-foreground: 25 30% 10%;
+
+    --secondary: 25 20% 20%;
+    --secondary-foreground: 40 20% 95%;
+
+    --muted: 25 20% 18%;
+    --muted-foreground: 35 15% 65%;
+
+    --accent: 45 85% 55%;
+    --accent-foreground: 25 30% 10%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 40 20% 95%;
+
+    --border: 25 20% 25%;
+    --input: 25 20% 25%;
+    --ring: 140 60% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-['Inter'] antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-['Playfair_Display'];
+  }
+}
+
+@layer utilities {
+  .brand-gradient {
+    background: linear-gradient(135deg, hsl(var(--brand-green)) 0%, hsl(var(--brand-gold)) 100%);
+  }
+  
+  .earth-gradient {
+    background: linear-gradient(135deg, hsl(var(--brand-brown)) 0%, hsl(var(--brand-earth)) 100%);
+  }
+  
+  .vintage-shadow {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+}
