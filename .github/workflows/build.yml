@@ -16,7 +16,7 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd="mongosh --eval 'db.runCommand({ ping: 1 })'" 
+          --health-cmd="echo 'db.runCommand({ ping: 1 })' | mongosh localhost/test --quiet"
           --health-interval=10s 
           --health-timeout=5s 
           --health-retries=5
@@ -33,14 +33,19 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Install netcat (for waiting on MongoDB)
+        run: sudo apt-get update && sudo apt-get install -y netcat
+
       - name: Wait for MongoDB
         run: |
-          echo "Waiting for MongoDB to be ready..."
-          until mongosh --eval 'db.runCommand({ ping: 1 })' --quiet; do
+          echo "Waiting for MongoDB to be ready on port 27017..."
+          for i in {1..15}; do
+            nc -z localhost 27017 && echo "✅ MongoDB is ready." && exit 0
             echo "Still waiting..."
             sleep 2
           done
-          echo "✅ MongoDB is ready."
+          echo "❌ MongoDB did not become ready in time."
+          exit 1
 
       - name: Run Maven tests
         working-directory: 3kstBackend
@@ -53,7 +58,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git fetch origin
           git checkout -b dev origin/dev || git checkout dev
           git merge origin/tijani --no-edit
