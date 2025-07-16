@@ -18,9 +18,16 @@ import {
   Eye,
   User,
   Calendar,
-  ChevronDown
+  ChevronDown,
+  Menu,
+  X
 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import ServiceManager from './ServiceManager';
+import ProductManager from './ProductManager';
+import TestimonialManager from './TestimonialManager';
+import MediaManager from './MediaManager';
+import UserMenu from '../UserMenu';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -38,11 +45,63 @@ const AdminDashboard = ({ onLogout, activeSection, onSectionChange, user }: Admi
     { id: "media", name: "Media", icon: Images, color: "bg-pink-500" },
   ];
 
-  const stats = [
-    { label: "Active Services", value: "6", color: "text-green-600" },
-    { label: "Products", value: "12", color: "text-purple-600" },
-    { label: "Testimonials", value: "25", color: "text-orange-600" },
-    { label: "Media Files", value: "48", color: "text-pink-600" },
+  // Mobile section nav (only on mobile)
+  const SectionNavMobile = ({ sections, activeSection, onSectionChange }) => (
+    <div className="flex flex-col gap-2 mb-6 md:hidden">
+      {sections.map((section) => {
+        const Icon = section.icon;
+        return (
+          <Button
+            key={section.id}
+            variant={activeSection === section.id ? "default" : "outline"}
+            className={
+              activeSection === section.id
+                ? `${section.color} text-white`
+                : ""
+            }
+            onClick={() => onSectionChange(section.id)}
+          >
+            <Icon className="w-4 h-4 mr-2" />
+            {section.name}
+          </Button>
+        );
+      })}
+    </div>
+  );
+
+  const [stats, setStats] = useState({
+    services: 0,
+    products: 0,
+    testimonials: 0,
+    media: 0,
+  });
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const [servicesRes, productsRes, testimonialsRes, mediaRes] = await Promise.all([
+          api.get('/services/count'),
+          api.get('/products/count'),
+          api.get('/testimonials/count'),
+          api.get('/media/count'),
+        ]);
+        setStats({
+          services: servicesRes.data.count,
+          products: productsRes.data.count,
+          testimonials: testimonialsRes.data.count,
+          media: mediaRes.data.count,
+        });
+      } catch (err) {
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const statsArray = [
+    { label: "Active Services", value: stats.services, color: "text-green-600" },
+    { label: "Products", value: stats.products, color: "text-purple-600" },
+    { label: "Testimonials", value: stats.testimonials, color: "text-orange-600" },
+    { label: "Media Files", value: stats.media, color: "text-pink-600" },
   ];
 
   const [admins, setAdmins] = useState([]);
@@ -53,8 +112,8 @@ const AdminDashboard = ({ onLogout, activeSection, onSectionChange, user }: Admi
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClick = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
@@ -118,186 +177,220 @@ const AdminDashboard = ({ onLogout, activeSection, onSectionChange, user }: Admi
     }
   };
 
-  return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Sticky Top Navigation Bar - always visible */}
-      <div className="sticky top-0 z-30 bg-white border-b-4 border-red-500 py-2 mb-8">
-        <div className="flex flex-wrap gap-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  // Hamburger menu button for mobile (no extra margin)
+  const MobileMenuButton = () => (
+    <button
+      onClick={() => setMenuOpen(!menuOpen)}
+      className="md:hidden bg-white rounded-full shadow p-2 border border-gray-200"
+      aria-label="Open menu"
+    >
+      {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+    </button>
+  );
+
+  // Toggleable section nav for mobile - now as a side drawer
+  const SectionNavMobileToggle = () => (
+    menuOpen ? (
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/30 z-40"
+          onClick={() => setMenuOpen(false)}
+        />
+        {/* Drawer */}
+        <div
+          className="fixed top-0 left-0 h-full w-64 z-50 bg-white shadow-lg flex flex-col gap-2 p-4 transition-transform duration-300 md:hidden"
+          style={{ transform: menuOpen ? 'translateX(0)' : 'translateX(-100%)' }}
+        >
           {sections.map((section) => {
             const Icon = section.icon;
             return (
               <Button
                 key={section.id}
                 variant={activeSection === section.id ? "default" : "outline"}
-                onClick={() => onSectionChange(section.id)}
-                className="flex items-center gap-2"
+                className={
+                  activeSection === section.id
+                    ? `${section.color} text-white`
+                    : ""
+                }
+                onClick={() => {
+                  onSectionChange(section.id);
+                  setMenuOpen(false);
+                }}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4 mr-2" />
                 {section.name}
               </Button>
             );
           })}
         </div>
+      </>
+    ) : null
+  );
+
+  return (
+    <div className="min-h-screen bg-muted/30 relative">
+      {/* Admin dashboard header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white shadow-md fixed top-0 left-0 w-full z-40">
+        {/* Left: Hamburger + Logo */}
+        <div className="flex items-center">
+          <MobileMenuButton />
+          <span className="font-bold text-xl text-primary ml-2">3KS&T</span>
+        </div>
+        {/* Right: User info/menu */}
+        <div className="flex items-center gap-2">
+          <UserMenu />
+        </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Overview Section */}
-        {activeSection === "overview" && (
-          <div className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <Card key={index} className="hover-lift">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">{stat.label}</p>
-                        <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
+      <div className="pt-16"> {/* Add padding to push content below fixed header */}
+        <SectionNavMobileToggle />
+        {/* Desktop section nav (hidden on mobile) */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Overview Section */}
+          {activeSection === "overview" && (
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {statsArray.map((stat, index) => (
+                  <Card key={index} className="hover-lift">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">{stat.label}</p>
+                          <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
+                        </div>
                       </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Quick Actions */}
+              <Card className="vintage-shadow">
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Button 
+                      className="brand-gradient text-white flex items-center gap-2 h-12"
+                      onClick={() => onSectionChange("services")}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Service
+                    </Button>
+                    <Button 
+                      className="brand-gradient text-white flex items-center gap-2 h-12"
+                      onClick={() => onSectionChange("products")}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Product
+                    </Button>
+                    <Button 
+                      className="brand-gradient text-white flex items-center gap-2 h-12"
+                      onClick={() => onSectionChange("testimonials")}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Testimonial
+                    </Button>
+                    <Button 
+                      className="brand-gradient text-white flex items-center gap-2 h-12"
+                      onClick={() => onSectionChange("media")}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Upload Media
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Activity */}
+              <Card className="vintage-shadow">
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm">New testimonial added from Sarah M.</span>
+                      <Badge variant="secondary" className="ml-auto">2 hours ago</Badge>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm">Hair Coloring service updated</span>
+                      <Badge variant="secondary" className="ml-auto">5 hours ago</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm">New product added: Eco Hair Oil</span>
+                      <Badge variant="secondary" className="ml-auto">1 day ago</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+          )}
+          {activeSection === "services" && <ServiceManager />}
+          {activeSection === "products" && <ProductManager />}
+          {activeSection === "testimonials" && <TestimonialManager />}
+          {activeSection === "media" && <MediaManager />}
 
-            {/* Quick Actions */}
-            <Card className="vintage-shadow">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Button 
-                    className="brand-gradient text-white flex items-center gap-2 h-12"
-                    onClick={() => onSectionChange("services")}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Service
-                  </Button>
-                  <Button 
-                    className="brand-gradient text-white flex items-center gap-2 h-12"
-                    onClick={() => onSectionChange("products")}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Product
-                  </Button>
-                  <Button 
-                    className="brand-gradient text-white flex items-center gap-2 h-12"
-                    onClick={() => onSectionChange("testimonials")}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Testimonial
-                  </Button>
-                  <Button 
-                    className="brand-gradient text-white flex items-center gap-2 h-12"
-                    onClick={() => onSectionChange("media")}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Upload Media
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card className="vintage-shadow">
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">New testimonial added from Sarah M.</span>
-                    <Badge variant="secondary" className="ml-auto">2 hours ago</Badge>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm">Hair Coloring service updated</span>
-                    <Badge variant="secondary" className="ml-auto">5 hours ago</Badge>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <span className="text-sm">New product added: Eco Hair Oil</span>
-                    <Badge variant="secondary" className="ml-auto">1 day ago</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-        {activeSection === "services" && (
-          <div className="py-12 text-center">
-            <h2 className="text-2xl font-bold mb-4">Services Management</h2>
-            <p className="text-muted-foreground">Manage your services here.</p>
-          </div>
-        )}
-        {activeSection === "products" && (
-          <div className="py-12 text-center">
-            <h2 className="text-2xl font-bold mb-4">Products Management</h2>
-            <p className="text-muted-foreground">Manage your products here.</p>
-          </div>
-        )}
-        {activeSection === "testimonials" && (
-          <div className="py-12 text-center">
-            <h2 className="text-2xl font-bold mb-4">Testimonials Management</h2>
-            <p className="text-muted-foreground">Manage your testimonials here.</p>
-          </div>
-        )}
-        {activeSection === "media" && (
-          <div className="py-12 text-center">
-            <h2 className="text-2xl font-bold mb-4">Media Management</h2>
-            <p className="text-muted-foreground">Manage your media files here.</p>
-          </div>
-        )}
-
-        {user?.role === 'SUPER_ADMIN' && (
-          <div className="mt-8 p-6 bg-white rounded shadow">
-            <h2 className="text-xl font-bold mb-4">Admin Management (Super Admin Only)</h2>
-            <form onSubmit={handleAddAdmin} className="flex gap-2 mb-4">
-              <input
-                type="email"
-                value={newAdminEmail}
-                onChange={e => setNewAdminEmail(e.target.value)}
-                placeholder="Admin email"
-                className="border rounded px-3 py-1"
-                required
-              />
-              <button type="submit" className="bg-primary text-white px-4 py-1 rounded" disabled={adding}>
-                {adding ? 'Adding...' : 'Add Admin'}
-              </button>
-            </form>
-            <div>
-              {loadingAdmins ? (
-                <div>Loading admins...</div>
-              ) : (
-                <table className="w-full text-left border">
-                  <thead>
-                    <tr>
-                      <th className="p-2 border-b">Email</th>
-                      <th className="p-2 border-b">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {admins.map(a => (
-                      <tr key={a.email}>
-                        <td className="p-2 border-b">{a.email}</td>
-                        <td className="p-2 border-b">
-                          <button
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                            onClick={() => handleRemoveAdmin(a.id)}
-                            disabled={removingId === a.id}
-                          >
-                            {removingId === a.id ? 'Removing...' : 'Remove'}
-                          </button>
-                        </td>
+          {/* Admin Management (Super Admin Only) - only show in overview */}
+          {activeSection === 'overview' && user?.role === 'SUPER_ADMIN' && (
+            <div className="mt-8 p-6 bg-white rounded shadow">
+              <h2 className="text-xl font-bold mb-4">Admin Management (Super Admin Only)</h2>
+              <form onSubmit={handleAddAdmin} className="flex items-center gap-2 mb-4">
+                <input
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={e => setNewAdminEmail(e.target.value)}
+                  placeholder="Admin email"
+                  className="border rounded px-2 h-9 text-sm"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="bg-primary text-white px-2 h-9 rounded flex items-center justify-center text-sm flex-shrink-0"
+                  style={{ minWidth: '80px' }}
+                  disabled={adding}
+                >
+                  {adding ? 'Adding...' : 'Add Admin'}
+                </button>
+              </form>
+              <div>
+                {loadingAdmins ? (
+                  <div>Loading admins...</div>
+                ) : (
+                  <table className="w-full text-left border">
+                    <thead>
+                      <tr>
+                        <th className="p-2 border-b">Email</th>
+                        <th className="p-2 border-b">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                    </thead>
+                    <tbody>
+                      {admins.map(a => (
+                        <tr key={a.email}>
+                          <td className="p-2 border-b">{a.email}</td>
+                          <td className="p-2 border-b">
+                            <button
+                              className="bg-red-500 text-white px-3 py-1 rounded"
+                              onClick={() => handleRemoveAdmin(a.id)}
+                              disabled={removingId === a.id}
+                            >
+                              {removingId === a.id ? 'Removing...' : 'Remove'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -30,8 +30,12 @@ public class Media {
     @NotNull(message = "Media type is required")
     private MediaType type; // IMAGE, VIDEO
     
-    @NotBlank(message = "Media URL is required")
+    // Deprecated: use beforeUrl/afterUrl for before/after images
     private String url;
+
+    // New fields for before/after images
+    private String beforeUrl;
+    private String afterUrl;
     
     @NotBlank(message = "Category is required")
     @Size(min = 2, max = 50, message = "Category must be between 2 and 50 characters")

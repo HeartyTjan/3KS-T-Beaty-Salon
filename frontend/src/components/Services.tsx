@@ -32,15 +32,15 @@ const Services = () => {
   if (isLoading) {
     return (
       <section id="services" className="py-20 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
               Our Services
             </Badge>
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              Professional Hair &
+              Professional Hair & Beauty Services
               <span className="text-transparent bg-clip-text brand-gradient block">
-                Beauty Services
+                ......
               </span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">

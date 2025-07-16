@@ -99,6 +99,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       const backendMsg = error?.response?.data?.message;
       console.error('Login error:', error);
+      if (!backendMsg || backendMsg.toLowerCase().includes('bad credentials')) {
+        throw new Error('Invalid username or password');
+      }
       throw new Error(backendMsg || 'Login failed');
     }
   };

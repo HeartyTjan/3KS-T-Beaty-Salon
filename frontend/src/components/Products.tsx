@@ -16,7 +16,21 @@ const Products = () => {
 
   // Fetch products from backend
   const { data: productsResponse, isLoading, error } = useAvailableProducts();
-  const products = productsResponse?.data || [];
+  
+  // Handle different response structures
+  let products = [];
+  if (productsResponse) {
+    if (productsResponse.data && Array.isArray(productsResponse.data)) {
+      products = productsResponse.data;
+    } else if (Array.isArray(productsResponse)) {
+      products = productsResponse;
+    } else if (productsResponse.data && productsResponse.data.content) {
+      products = productsResponse.data.content;
+    }
+  }
+
+  console.log('Products response:', productsResponse);
+  console.log('Processed products:', products);
 
   const handleAddToCart = async (productId: string, productName: string, productPrice: number) => {
     if (!isAuthenticated) {
@@ -50,9 +64,9 @@ const Products = () => {
               Our Products
             </Badge>
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              Premium Hair & Beauty
+              Premium Hair & Beauty Products
               <span className="text-transparent bg-clip-text brand-gradient block">
-                Products
+               ....
               </span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -70,6 +84,7 @@ const Products = () => {
   }
 
   if (error) {
+    console.error('Products error:', error);
     return (
       <section id="products" className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,6 +106,7 @@ const Products = () => {
           
           <div className="text-center py-20">
             <p className="text-muted-foreground">Failed to load products. Please try again later.</p>
+            <p className="text-sm text-muted-foreground mt-2">Error: {error.message}</p>
           </div>
         </div>
       </section>
@@ -119,25 +135,32 @@ const Products = () => {
         {products.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-muted-foreground">No products available at the moment.</p>
+            <p className="text-sm text-muted-foreground mt-2">Please check back later or contact us for assistance.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {products.map((product) => (
               <Card key={product.id} className="hover-lift overflow-hidden bg-card border-border">
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative w-full aspect-[4/3] flex items-center justify-center bg-white overflow-hidden">
                   <img 
                     src={product.imageUrl || "https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"}
                     alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                    className="w-full h-full object-contain"
                   />
                   <div className="absolute top-4 left-4">
-                    <Badge className="bg-green-500/90 text-white border-0">
-                      🌿 Premium
-                    </Badge>
+                    {product.ecoFriendly ? (
+                      <Badge className="bg-green-500/90 text-white border-0">
+                        🌿 Eco
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-blue-500/90 text-white border-0">
+                        Premium
+                      </Badge>
+                    )}
                   </div>
                   <div className="absolute top-4 right-4">
                     <Badge className="bg-white/90 text-primary border-0">
-                      ₦{product.price.toLocaleString()}
+                      ₦{product.price?.toLocaleString() || '0'}
                     </Badge>
                   </div>
                 </div>
@@ -148,15 +171,15 @@ const Products = () => {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">4.8</span>
+                      <span className="text-sm font-medium">{product.rating || 4.8}</span>
                     </div>
-                    <span className="text-sm text-muted-foreground">(24 reviews)</span>
+                    <span className="text-sm text-muted-foreground">({product.reviews || 24} reviews)</span>
                   </div>
                 </CardHeader>
                 
                 <CardContent>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-bold text-primary">₦{product.price.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-primary">₦{product.price?.toLocaleString() || '0'}</span>
                     {product.stockQuantity > 0 ? (
                       <Badge variant="secondary" className="text-green-600">
                         In Stock
@@ -169,7 +192,7 @@ const Products = () => {
                   </div>
                   <Button 
                     className="w-full brand-gradient text-white hover-lift flex items-center gap-2 transition-all duration-200 hover:scale-105"
-                    onClick={() => handleAddToCart(product.id, product.name, product.price)}
+                    onClick={() => handleAddToCart(product.id, product.name, product.price || 0)}
                     disabled={product.stockQuantity === 0}
                   >
                     <ShoppingCart className="w-4 h-4" />

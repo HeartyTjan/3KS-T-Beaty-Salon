@@ -2,9 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import AdminLogin from "./components/admin/AdminLogin";
 import Booking from "./pages/Booking";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
@@ -17,12 +18,28 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Header from './components/Header';
 import ProfileDashboard from './pages/dashboard/ProfileDashboard';
 import BookingDashboard from './pages/dashboard/BookingDashboard';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 const queryClient = new QueryClient();
 
+// Route wrapper for /admin that handles login and redirect
+const AdminLoginRoute = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async (email, password) => {
+    await login(email, password);
+    navigate("/admin");
+  };
+
+  return <AdminLogin onLogin={handleLogin} />;
+};
+
 const AppContent = () => {
   const { isLoading } = useAuth();
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Show loading state during initial authentication check
   if (isLoading) {
@@ -37,8 +54,8 @@ const AppContent = () => {
   }
 
   return (
-    <BrowserRouter>
-      <Header />
+    <>
+      {!isAdminRoute && <Header />}
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/login" element={
@@ -56,11 +73,7 @@ const AppContent = () => {
             <EmailVerification />
           </ProtectedRoute>
         } />
-                  <Route path="/admin" element={
-            <ProtectedRoute requireAuth={true} requireAdmin={true}>
-              <Admin />
-            </ProtectedRoute>
-          } />
+            <Route path="/admin" element={<Admin />} />
         <Route path="/booking" element={
           // <ProtectedRoute requireAuth={false}>
             <Booking />
@@ -76,7 +89,7 @@ const AppContent = () => {
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 };
 
@@ -88,7 +101,9 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <AppContent />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
           </TooltipProvider>
         </CartProvider>
       </AuthProvider>

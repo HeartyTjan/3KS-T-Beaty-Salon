@@ -8,6 +8,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/testimonials")
@@ -39,6 +41,15 @@ public class TestimonialController {
     @GetMapping("/featured")
     public ResponseEntity<List<Testimonial>> getFeaturedTestimonials() {
         return ResponseEntity.ok(testimonialService.getFeaturedTestimonials());
+    }
+
+    // GET /api/testimonials/count - Get total testimonial count
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Integer>> getTestimonialCount() {
+        int count = testimonialService.getAllTestimonials().size();
+        Map<String, Integer> response = new HashMap<>();
+        response.put("count", count);
+        return ResponseEntity.ok(response);
     }
 
     // Admin only: delete testimonial

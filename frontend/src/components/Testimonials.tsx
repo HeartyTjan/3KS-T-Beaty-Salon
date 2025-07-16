@@ -2,62 +2,88 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { testimonialAPI } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from '@/hooks/use-toast';
 
 const Testimonials = () => {
-  const testimonials = [
-    {
-      name: "Amara Johnson",
-      location: "Lagos, Nigeria",
-      service: "Home Service Hair Styling",
-      rating: 5,
-      text: "3KS&T truly treats you like family! Their home service was exceptional - professional, friendly, and my hair has never looked better. The eco-friendly products they use are amazing!",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    },
-    {
-      name: "Kemi Adebayo",
-      location: "Accra, Ghana",
-      service: "Hair Coloring & Styling",
-      rating: 5,
-      text: "The color transformation was incredible! The team is so talented and they really listen to what you want. The vintage-modern vibe of their service is exactly what I was looking for.",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    },
-    {
-      name: "David Okafor",
-      location: "Nairobi, Kenya",
-      service: "Dreadlock Maintenance",
-      rating: 5,
-      text: "As a guy, I was impressed by how welcoming and professional they are. My locs look amazing and the maintenance tips they gave me were spot on. Definitely recommend!",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    },
-    {
-      name: "Fatima Al-Hassan",
-      location: "Cairo, Egypt",
-      service: "Nail Art & Hair Extensions",
-      rating: 5,
-      text: "The attention to detail is incredible! Both my nails and hair extensions look so natural and beautiful. The eco-friendly approach aligns perfectly with my values.",
-      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    },
-    {
-      name: "Grace Mwangi",
-      location: "Johannesburg, South Africa",
-      service: "Complete Hair Makeover",
-      rating: 5,
-      text: "From consultation to final styling, everything was perfect. They understood exactly what I wanted and delivered beyond my expectations. The products they use smell amazing too!",
-      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    },
-    {
-      name: "Omar Diallo",
-      location: "Dakar, Senegal",
-      service: "Hair Products & Styling",
-      rating: 5,
-      text: "The hair products I bought are fantastic quality and the styling session was top-notch. It's rare to find such genuine care and professionalism. They really do treat you like family!",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ content: "", rating: 5 });
+  const { isAuthenticated, user } = useAuth();
+  const { toast } = useToast();
+  const [testimonials, setTestimonials] = useState([]);
+
+  useEffect(() => {
+    testimonialAPI.getAllTestimonials().then(res => {
+      console.log(res);
+      const mapped = (res || []).map(t => ({
+        id: t.id,
+        name: t.userName || t.name || 'Anonymous',
+        rating: t.rating,
+        text: t.content || t.text,
+        image: t.imageUrl || t.image || '',
+        service: t.service || '',
+        date: t.createdAt ? t.createdAt.split('T')[0] : (t.date || ''),
+        location: t.location || '',
+      }));
+      setTestimonials(mapped);
+    });
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    setSubmitting(true);
+    try {
+      await testimonialAPI.createTestimonial(user.id, user.firstName + ' ' + user.lastName, form.content, form.rating);
+      toast({ title: 'Thank you for your testimonial!', status: 'success' });
+      setForm({ content: "", rating: 5 });
+    } catch (err) {
+      toast({ title: 'Failed to submit testimonial', status: 'error' });
+    } finally {
+      setSubmitting(false);
     }
-  ];
+  };
 
   return (
     <section id="testimonials" className="py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* User Testimonial Submission Form */}
+        <div className="mb-12">
+          {isAuthenticated ? (
+            <form onSubmit={handleSubmit} className="bg-card p-6 rounded-xl shadow flex flex-col md:flex-row gap-4 items-center">
+              <textarea
+                className="flex-1 border rounded p-2 min-h-[60px]"
+                placeholder="Share your experience..."
+                value={form.content}
+                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                required
+                disabled={submitting}
+              />
+              <select
+                className="border rounded p-2"
+                value={form.rating}
+                onChange={e => setForm(f => ({ ...f, rating: Number(e.target.value) }))}
+                disabled={submitting}
+              >
+                {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} Stars</option>)}
+              </select>
+              <button
+                type="submit"
+                className="brand-gradient text-white px-6 py-2 rounded font-bold disabled:opacity-60"
+                disabled={submitting || !form.content.trim()}
+              >
+                {submitting ? 'Submitting...' : 'Submit Testimonial'}
+              </button>
+            </form>
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <span className="font-semibold">Log in to share your experience!</span>
+            </div>
+          )}
+        </div>
+
         <div className="text-center mb-16">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
             Client Reviews
@@ -92,11 +118,22 @@ const Testimonials = () => {
                 
                 {/* Client Info */}
                 <div className="flex items-center gap-4">
-                  <img 
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
+                  {testimonial.image ? (
+                    <img 
+                      src={testimonial.image}
+                      alt={testimonial.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-primary">
+                      {testimonial.name
+                        .split(' ')
+                        .map(word => word[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </div>
+                  )}
                   <div>
                     <div className="font-semibold text-foreground">{testimonial.name}</div>
                     <div className="text-sm text-muted-foreground">{testimonial.location}</div>

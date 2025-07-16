@@ -31,7 +31,7 @@ const Hero = () => {
             
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
               Transform Your
-              <span className="text-transparent bg-clip-text brand-gradient block">
+              <span className="block bg-gradient-to-r from-emerald-600 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
                 Hair & Style
               </span>
               With 3KS&T

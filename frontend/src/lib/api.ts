@@ -7,7 +7,7 @@ console.log('All env vars:', import.meta.env);
 
 // Configure axios defaults
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8084') + '/api',
+  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -227,6 +227,19 @@ export interface Payment {
   updatedAt: string;
 }
 
+// Media types
+export interface Media {
+  id: string;
+  name: string;
+  type: 'image' | 'video';
+  beforeUrl: string;
+  afterUrl: string;
+  category: string;
+  alt: string;
+  uploadDate: string;
+  size: string;
+}
+
 // API service functions
 export const authAPI = {
   // Login
@@ -312,6 +325,24 @@ export const productAPI = {
   // Get available products
   getAvailableProducts: async (): Promise<ApiResponse<Product[]>> => {
     const response = await api.get('/products/available');
+    return response.data;
+  },
+
+  // Create a new product
+  createProduct: async (product: Partial<Product>): Promise<ApiResponse<Product>> => {
+    const response = await api.post('/products', product);
+    return response.data;
+  },
+
+  // Update a product
+  updateProduct: async (id: string, product: Partial<Product>): Promise<ApiResponse<Product>> => {
+    const response = await api.put(`/products/${id}`, product);
+    return response.data;
+  },
+
+  // Delete a product
+  deleteProduct: async (id: string): Promise<ApiResponse<string>> => {
+    const response = await api.delete(`/products/${id}`);
     return response.data;
   },
 };
@@ -488,8 +519,8 @@ export const bookingAPI = {
 
 export const testimonialAPI = {
   // Create testimonial
-  createTestimonial: async (userId: string, content: string, rating: number): Promise<ApiResponse<Testimonial>> => {
-    const response = await api.post('/testimonials', { userId, content, rating });
+  createTestimonial: async (userId: string, name: string, text: string, rating: number): Promise<ApiResponse<Testimonial>> => {
+    const response = await api.post('/testimonials', { userId, name, text, rating });
     return response.data;
   },
 
@@ -528,16 +559,24 @@ export const testimonialAPI = {
     const response = await api.get('/testimonials/average-rating');
     return response.data;
   },
+
+  // Get all testimonials (admin)
+  getAllTestimonials: async (): Promise<ApiResponse<Testimonial[]>> => {
+    const response = await api.get('/testimonials');
+    return response.data;
+  },
 };
 
 export const mediaAPI = {
-  uploadProfilePicture: async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post('/media/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data; // { success, blobId, mediaId, url }
+  // Create a new media entry
+  createMedia: async (media: Partial<Media>) => {
+    const response = await api.post('/media', media);
+    return response.data;
+  },
+  // Get all media entries
+  getAllMedia: async (): Promise<Media[]> => {
+    const response = await api.get('/media');
+    return response.data;
   },
 };
 

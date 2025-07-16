@@ -3,6 +3,8 @@ package com._3kstbackend.service.impl;
 import com._3kstbackend.model.Testimonial;
 import com._3kstbackend.repository.TestimonialRepository;
 import com._3kstbackend.service.TestimonialService;
+import com._3kstbackend.repository.UserRepository;
+import com._3kstbackend.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,17 +16,22 @@ import java.util.Optional;
 @Service
 public class TestimonialServiceImpl implements TestimonialService {
     private final TestimonialRepository testimonialRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public TestimonialServiceImpl(TestimonialRepository testimonialRepository) {
+    public TestimonialServiceImpl(TestimonialRepository testimonialRepository, UserRepository userRepository) {
         this.testimonialRepository = testimonialRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     public Testimonial createTestimonial(Testimonial testimonial) {
-        testimonial.setId(null); // Let MongoDB generate the ID
-        testimonial.setApproved(false); // Default: not approved
-        testimonial.setFeatured(false); // Default: not featured
+        // If testimonial has a userId but no name, look up the user and set the name
+        if ((testimonial.getName() == null || testimonial.getName().isBlank()) && testimonial.getUserId() != null) {
+            userRepository.findById(testimonial.getUserId()).ifPresent(user -> testimonial.setName(user.getFullName()));
+        }
+        testimonial.setApproved(true); 
+        testimonial.setFeatured(true); 
         if (testimonial.getDate() == null) {
             testimonial.setDate(LocalDate.now());
         }
@@ -43,19 +50,29 @@ public class TestimonialServiceImpl implements TestimonialService {
         return testimonialRepository.findById(id);
     }
 
+    private boolean isValid(Testimonial t) {
+        return t != null && t.getDate() != null;
+    }
+
     @Override
     public List<Testimonial> getAllTestimonials() {
-        return testimonialRepository.findAll();
+        return testimonialRepository.findAll().stream()
+                .filter(this::isValid)
+                .toList();
     }
 
     @Override
     public List<Testimonial> getApprovedTestimonials() {
-        return testimonialRepository.findByApprovedTrue();
+        return testimonialRepository.findByApprovedTrue().stream()
+                .filter(this::isValid)
+                .toList();
     }
 
     @Override
     public List<Testimonial> getFeaturedTestimonials() {
-        return testimonialRepository.findByFeaturedTrue();
+        return testimonialRepository.findByFeaturedTrue().stream()
+                .filter(this::isValid)
+                .toList();
     }
 
     @Override

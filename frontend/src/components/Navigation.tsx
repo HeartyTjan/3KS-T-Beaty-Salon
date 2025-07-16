@@ -177,6 +177,34 @@ const Navigation = () => {
         </div>
         {/* ...Mobile navigation here... */}
       </div>
+      {/* Mobile Navigation Dropdown */}
+      {isOpen && (
+        <div className="md:hidden mt-2 bg-background rounded-lg shadow-lg py-4 px-6 space-y-4 absolute left-0 right-0 top-16 z-40">
+          <a href="#services" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Services</a>
+          <a href="#products" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Products</a>
+          <a href="#portfolio" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Portfolio</a>
+          <a href="#testimonials" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Reviews</a>
+          <a href="#contact" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Contact</a>
+          {isAuthenticated && (
+            <Link to="/dashboard/profile" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Profile</Link>
+          )}
+          {/* Mobile Login/Logout UI */}
+          {!isAuthenticated ? (
+            <Button
+              className="w-full bg-primary text-white font-semibold hover:bg-primary/90 transition"
+              onClick={() => {
+                setShowLogin(true);
+                setIsOpen(false);
+              }}
+            >
+              Login
+            </Button>
+          ) : (
+            <UserMenu />
+          )}
+          <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+        </div>
+      )}
     </nav>
   );
 };

@@ -1,11 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Star, User } from "lucide-react";
+import { testimonialAPI } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from '@/hooks/use-toast';
 
 interface Testimonial {
   id: string;
@@ -18,26 +21,7 @@ interface Testimonial {
 }
 
 const TestimonialManager = () => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([
-    {
-      id: "1",
-      name: "Sarah M.",
-      rating: 5,
-      text: "Amazing experience! The home service was professional and the results exceeded my expectations. I felt like family throughout the entire process.",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612f601?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
-      service: "Home Service",
-      date: "2024-01-15"
-    },
-    {
-      id: "2",
-      name: "James K.",
-      rating: 5,
-      text: "Best hair coloring experience I've ever had. The eco-friendly products made me feel good about my choice. Highly recommend!",
-      service: "Hair Coloring",
-      date: "2024-01-10"
-    }
-  ]);
-
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
   const [formData, setFormData] = useState({
@@ -48,32 +32,50 @@ const TestimonialManager = () => {
     service: "",
     date: new Date().toISOString().split('T')[0]
   });
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    testimonialAPI.getAllTestimonials().then(res => {
+      const mapped = (res || []).map(t => ({
+        id: t.id,
+        name: t.userName || t.name || 'Anonymous',
+        rating: t.rating,
+        text: t.content || t.text,
+        image: t.imageUrl || t.image || '',
+        service: t.service || '',
+        date: t.createdAt ? t.createdAt.split('T')[0] : (t.date || ''),
+      }));
+      setTestimonials(mapped);
+    });
+  }, []);
 
   const services = ["Home Service", "Hair Coloring", "Styling & Cuts", "Dreads & Braids", "Hair Making", "Nail Services"];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (editingTestimonial) {
-      setTestimonials(testimonials.map(testimonial => 
-        testimonial.id === editingTestimonial.id 
-          ? { 
-              ...testimonial, 
-              ...formData, 
-              rating: parseInt(formData.rating)
-            }
-          : testimonial
-      ));
-    } else {
-      const newTestimonial: Testimonial = {
-        id: Date.now().toString(),
-        ...formData,
-        rating: parseInt(formData.rating)
-      };
-      setTestimonials([...testimonials, newTestimonial]);
+    try {
+      await testimonialAPI.createTestimonial(
+        user?.id || "admin",
+        formData.text,
+        parseInt(formData.rating)
+      );
+      toast({ title: 'Testimonial added!', status: 'success' });
+      const res = await testimonialAPI.getAllTestimonials();
+      const mapped = (res.data || []).map(t => ({
+        id: t.id,
+        name: t.userName || t.name || 'Anonymous',
+        rating: t.rating,
+        text: t.content || t.text,
+        image: t.imageUrl || t.image || '',
+        service: t.service || '',
+        date: t.createdAt ? t.createdAt.split('T')[0] : (t.date || ''),
+      }));
+      setTestimonials(mapped);
+      resetForm();
+    } catch (err) {
+      toast({ title: 'Failed to add testimonial', status: 'error' });
     }
-    
-    resetForm();
   };
 
   const resetForm = () => {
@@ -89,34 +91,20 @@ const TestimonialManager = () => {
     setIsFormOpen(false);
   };
 
-  const handleEdit = (testimonial: Testimonial) => {
-    setFormData({
-      name: testimonial.name,
-      rating: testimonial.rating.toString(),
-      text: testimonial.text,
-      image: testimonial.image || "",
-      service: testimonial.service,
-      date: testimonial.date
-    });
-    setEditingTestimonial(testimonial);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    setTestimonials(testimonials.filter(testimonial => testimonial.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await testimonialAPI.deleteTestimonial(id, user?.id || "admin");
+      toast({ title: 'Testimonial deleted!', status: 'success' });
+      setTestimonials(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      toast({ title: 'Failed to delete testimonial', status: 'error' });
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Testimonial Management</h2>
-        <Button 
-          onClick={() => setIsFormOpen(true)}
-          className="brand-gradient text-white flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add New Testimonial
-        </Button>
       </div>
 
       {/* Testimonial Form */}
@@ -264,15 +252,6 @@ const TestimonialManager = () => {
               </p>
               
               <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleEdit(testimonial)}
-                  className="flex items-center gap-1 flex-1"
-                >
-                  <Edit className="w-3 h-3" />
-                  Edit
-                </Button>
                 <Button 
                   size="sm" 
                   variant="outline"

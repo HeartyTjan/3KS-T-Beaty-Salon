@@ -1,10 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
+import Admin from "@/pages/Admin";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminLoginProps {
   onLogin: (username: string, password: string) => void;
@@ -13,13 +16,25 @@ interface AdminLoginProps {
 }
 
 const AdminLogin = ({ onLogin, isLoading, error }: AdminLoginProps) => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      user?.role &&
+      ["ADMIN", "SUPER_ADMIN"].includes(user.role)
+    ) {
+      navigate("/admin/dashboard");
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(username, password);
+    onLogin(email, password);
   };
 
   return (
@@ -36,15 +51,15 @@ const AdminLogin = ({ onLogin, isLoading, error }: AdminLoginProps) => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   required
                 />

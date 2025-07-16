@@ -25,6 +25,7 @@ public class Testimonial {
     
     @Id
     private String id;
+    private String userId;
     
     @NotBlank(message = "Customer name is required")
     @Size(min = 2, max = 100, message = "Customer name must be between 2 and 100 characters")
@@ -41,7 +42,6 @@ public class Testimonial {
     
     private String imageUrl;
     
-    private String blobId; // For Walrus storage on Sui blockchain
     
     @NotBlank(message = "Service is required")
     @Size(min = 2, max = 100, message = "Service must be between 2 and 100 characters")
@@ -57,20 +57,16 @@ public class Testimonial {
     @Builder.Default
     private Boolean featured = false;
     
-    private String customerEmail; // Optional, for follow-up
-    
-    private String customerPhone; // Optional, for follow-up
-    
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
     
-    // Helper methods
     public String getFormattedDate() {
         return date.toString();
     }
     
     public String getStars() {
+        if (rating == null) return "";
         return "★".repeat(rating) + "☆".repeat(5 - rating);
     }
 } 

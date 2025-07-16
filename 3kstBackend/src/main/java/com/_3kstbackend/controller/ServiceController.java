@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/services")
@@ -28,6 +30,15 @@ public class ServiceController {
     public ResponseEntity<List<ServiceModel>> getAllServices() {
         List<ServiceModel> allServices = serviceService.getAllServices();
         return ResponseEntity.ok(allServices);
+    }
+
+    // GET /api/services/count - Get total service count
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Integer>> getServiceCount() {
+        int count = serviceService.getAllServices().size();
+        Map<String, Integer> response = new HashMap<>();
+        response.put("count", count);
+        return ResponseEntity.ok(response);
     }
 
     // POST /api/services

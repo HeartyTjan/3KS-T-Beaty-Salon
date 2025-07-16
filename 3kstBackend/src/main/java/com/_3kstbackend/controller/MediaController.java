@@ -10,45 +10,33 @@ import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/media")
 @RequiredArgsConstructor
 public class MediaController {
     private final MediaService mediaService;
-    // @Autowired private WalrusService walrusService; // Uncomment if you have a WalrusService
 
-    @PostMapping("/upload")
-    public ResponseEntity<Map<String, Object>> uploadMedia(@RequestParam("file") MultipartFile file) {
-        try {
-            // 1. Upload file to Walrus and get blobId (pseudo-code)
-            String blobId = "walrus-blob-id"; // Replace with actual upload logic
-            // if (walrusService != null) blobId = walrusService.upload(file);
+    // Save a media entry (with before/after URLs, alt, etc.)
+    @PostMapping("")
+    public ResponseEntity<Media> createMedia(@RequestBody Media media) {
+        Media saved = mediaService.createMedia(media);
+        return ResponseEntity.ok(saved);
+    }
 
-            // 2. Save media metadata
-            Media media = Media.builder()
-                    .name(file.getOriginalFilename())
-                    .type(Media.MediaType.IMAGE)
-                    .url("https://walrus.sui/" + blobId) // Replace with actual URL logic
-                    .category("profile")
-                    .alt(file.getOriginalFilename())
-                    .blobId(blobId)
-                    .size((file.getSize() / 1024) + " KB")
-                    .sizeInBytes(file.getSize())
-                    .build();
-            mediaService.createMedia(media);
+    // Fetch all media entries
+    @GetMapping("")
+    public ResponseEntity<List<Media>> getAllMedia() {
+        return ResponseEntity.ok(mediaService.getAllMedia());
+    }
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("blobId", blobId);
-            response.put("mediaId", media.getId());
-            response.put("url", media.getUrl());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+    // GET /api/media/count - Get total media count
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Integer>> getMediaCount() {
+        int count = mediaService.getAllMedia().size();
+        Map<String, Integer> response = new HashMap<>();
+        response.put("count", count);
+        return ResponseEntity.ok(response);
     }
 } 
