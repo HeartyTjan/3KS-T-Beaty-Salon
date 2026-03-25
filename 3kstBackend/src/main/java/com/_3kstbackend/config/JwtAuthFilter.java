@@ -34,17 +34,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             System.out.println("No Authorization header or not Bearer token, proceeding without authentication");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            String json = """
-                
-                {
-                    "status": 401,
-                    "error": "Missing or invalid Authorization header",
-                    "timestamp": "%s"
-                }
-                """.formatted(Instant.now().toString());
+            filterChain.doFilter(request, response);
 
-            response.getWriter().write(json);            
             return;
         }
 
